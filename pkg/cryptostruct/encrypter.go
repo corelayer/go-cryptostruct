@@ -104,9 +104,9 @@ func (t Encrypter) encryptField(fieldType reflect.Type, fieldValue reflect.Value
 		return reflect.Value{}, fmt.Errorf("could not initialize crypto parameters: %w", err)
 	}
 
-	// Check if the current field is a struct, which implements the interface Transformer
+	// Check if the current field is a struct, which implements the interface EncryptTransformer
 	// Decide to encrypt the field or the embedded struct
-	if fieldType.Implements(reflect.TypeOf((*Transformer)(nil)).Elem()) {
+	if fieldType.Implements(reflect.TypeOf((*EncryptTransformer)(nil)).Elem()) {
 		if out, err = t.encryptEmbeddedStruct(fieldValue, t.params.CipherSuite); err != nil {
 			return reflect.Value{}, err
 		}
@@ -130,7 +130,7 @@ func (t Encrypter) encryptEmbeddedStruct(field reflect.Value, cipherSuite string
 		output       any
 	)
 
-	cryptoParams, err = NewCryptoParams(cipherSuite, "")
+	cryptoParams, err = NewCryptoParams(cipherSuite)
 	if err != nil {
 		return reflect.Value{}, err
 	}

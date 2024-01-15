@@ -19,7 +19,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"reflect"
-	"time"
 
 	"github.com/corelayer/go-cryptostruct/examples/data"
 	"github.com/corelayer/go-cryptostruct/pkg/cryptostruct"
@@ -47,7 +46,7 @@ func main() {
 
 	tc = id.GetTransformConfig()
 
-	p, err = cryptostruct.NewCryptoParams("AES_256_GCM", "")
+	p, err = cryptostruct.NewCryptoParams("AES_256_GCM")
 	if err != nil {
 		panic(err)
 	}
@@ -61,12 +60,13 @@ func main() {
 	fmt.Println(sd, reflect.TypeOf(sd))
 	fmt.Println("_________________")
 
-	time.Sleep(2 * time.Second)
+	// time.Sleep(2 * time.Second)
 	fmt.Println("")
 	fmt.Println("DECRYPTING CONFIG")
 	fmt.Println("_________________")
 
 	decryptdata := sd.(data.SecureData)
+	fmt.Println(decryptdata, reflect.TypeOf(decryptdata))
 	decrypter := cryptostruct.NewDecrypter(masterKey, decryptdata.GetTransformConfig())
 	newid, err2 := decrypter.Transform(decryptdata)
 	if err2 != nil {

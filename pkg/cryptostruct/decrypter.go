@@ -40,7 +40,7 @@ type Decrypter struct {
 	config TransformConfig
 }
 
-func (t Decrypter) Transform(r Transformer) (any, error) {
+func (t Decrypter) Transform(r DecryptTransformer) (any, error) {
 	var (
 		err          error
 		tags         map[string]Tag
@@ -85,21 +85,21 @@ func (t Decrypter) Transform(r Transformer) (any, error) {
 
 		// CryptoParams must not be stored in the output
 		if fieldType == reflect.TypeOf(CryptoParams{}) {
-			fmt.Println("Skipping CryptoParams")
 			continue
 		}
 
+		// If field tag is not enabled, copy the value to the output
 		if !tags[fieldName].Enabled {
 			tmp.FieldByName(fieldName).Set(fieldValue)
 			continue
 		}
 
+		// Decrypt current field
 		var decryptedValue reflect.Value
 		if decryptedValue, err = t.decryptField(fieldType, fieldValue, tmp.FieldByName(fieldName).Kind(), cryptoConfig); err != nil {
 			return nil, err
 		}
-
-		tmp.FieldByName(fieldName).Set(t.convertValue(decryptedValue.Bytes(), tmp.FieldByName(fieldName).Kind()))
+		tmp.FieldByName(fieldName).Set(decryptedValue)
 	}
 
 	outputValue.Set(tmp)
@@ -111,12 +111,11 @@ func (t Decrypter) decryptField(fieldType reflect.Type, fieldValue reflect.Value
 		err error
 		out reflect.Value
 	)
-	if fieldType.Implements(reflect.TypeOf((*Transformer)(nil)).Elem()) {
-		if out, err = t.decryptEmbeddedStruct(fieldValue, cryptoConfig); err != nil {
+	if fieldType.Implements(reflect.TypeOf((*DecryptTransformer)(nil)).Elem()) {
+		if out, err = t.decryptEmbeddedStruct(fieldValue); err != nil {
 			return reflect.Value{}, err
 		}
 	} else {
-
 		var source []byte
 		source, err = hex.DecodeString(fieldValue.String())
 		if err != nil {
@@ -128,14 +127,14 @@ func (t Decrypter) decryptField(fieldType reflect.Type, fieldValue reflect.Value
 			return reflect.Value{}, fmt.Errorf("failed to decrypt data: %w", err)
 		}
 
-		out = reflect.ValueOf(decryptedData)
+		out = reflect.ValueOf(decryptedData.String())
 
 	}
 
-	return out, nil
+	return t.convertValue(out, outputType), nil
 }
 
-func (t Decrypter) decryptEmbeddedStruct(field reflect.Value, cryptoConfig sio.Config) (reflect.Value, error) {
+func (t Decrypter) decryptEmbeddedStruct(field reflect.Value) (reflect.Value, error) {
 	var (
 		err       error
 		decrypter Decrypter
@@ -144,26 +143,27 @@ func (t Decrypter) decryptEmbeddedStruct(field reflect.Value, cryptoConfig sio.C
 
 	decrypter = NewDecrypter(t.key, getEmbeddedTransformConfig(field))
 
-	if output, err = decrypter.Transform(field.Interface().(Transformer)); err != nil {
+	if output, err = decrypter.Transform(field.Interface().(DecryptTransformer)); err != nil {
 		return reflect.Value{}, err
 	}
 	return reflect.ValueOf(output), nil
 }
 
-func (t Decrypter) convertValue(decryptedData []byte, kind reflect.Kind) reflect.Value {
+func (t Decrypter) convertValue(decryptedData reflect.Value, kind reflect.Kind) reflect.Value {
 	switch kind {
 	case reflect.Int:
-		byteToInt, _ := strconv.Atoi(string(decryptedData))
+		byteToInt, _ := strconv.Atoi(decryptedData.String())
 		return reflect.ValueOf(byteToInt)
 	case reflect.String:
-		return reflect.ValueOf(string(decryptedData))
+		return reflect.ValueOf(decryptedData.String())
 	case reflect.Struct:
-		return reflect.ValueOf(decryptedData)
+		return decryptedData
 	default:
 		return reflect.ValueOf(decryptedData)
 	}
 }
 
-func getCryptoParams(fieldValue reflect.Value) CryptoParams {
-	return fieldValue.FieldByName("CryptoParams").Interface().(CryptoParams)
-}
+//
+// func getCryptoParams(fieldValue reflect.Value) CryptoParams {
+// 	return fieldValue.FieldByName("CryptoParams").Interface().(CryptoParams)
+// }

@@ -27,11 +27,15 @@ import (
 	"golang.org/x/crypto/hkdf"
 )
 
-func NewCryptoParams(cipherSuite string, nonce string) (CryptoParams, error) {
+func NewCryptoParams(cipherSuite string) (CryptoParams, error) {
 	var (
-		err error
-		p   CryptoParams
+		err   error
+		nonce string
+		p     CryptoParams
 	)
+	if nonce, err = createNonce(); err != nil {
+		return CryptoParams{}, err
+	}
 
 	// Initialize CryptoParams with function arguments
 	p = CryptoParams{
@@ -41,15 +45,6 @@ func NewCryptoParams(cipherSuite string, nonce string) (CryptoParams, error) {
 
 	// Validate the cipherSuite
 	_, err = p.getCipherSuite()
-	if err != nil {
-		return p, err
-	}
-
-	// Validate the nonce, or generate new nonce
-	_, err = p.getNonce()
-	if err != nil {
-		return p, err
-	}
 	return p, err
 }
 
@@ -62,26 +57,16 @@ func (p CryptoParams) getNonce() ([]byte, error) {
 	if p.Nonce != "" {
 		return hex.DecodeString(p.Nonce)
 	}
-
-	err := p.setNonce()
-	if err != nil {
-		return nil, err
-	}
-
-	return hex.DecodeString(p.Nonce)
+	return nil, fmt.Errorf("nonce is not set")
 }
 
-func (p CryptoParams) resetNonce() {
-	p.Nonce = ""
-}
-
-func (p *CryptoParams) setNonce() error {
+func createNonce() (string, error) {
 	var nonce [32]byte
 	if _, err := io.ReadFull(rand.Reader, nonce[:]); err != nil {
-		return fmt.Errorf("failed to read random data for nonce: %w", err)
+		return "", fmt.Errorf("failed to read random data for nonce: %w", err)
 	}
-	p.Nonce = hex.EncodeToString(nonce[:])
-	return nil
+
+	return hex.EncodeToString(nonce[:]), nil
 }
 
 func (p CryptoParams) getCipherSuite() ([]byte, error) {

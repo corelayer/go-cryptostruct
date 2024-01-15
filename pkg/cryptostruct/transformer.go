@@ -16,7 +16,11 @@
 
 package cryptostruct
 
-type Transformer interface {
+type EncryptTransformer interface {
 	GetTransformConfig() TransformConfig
+}
+
+type DecryptTransformer interface {
+	EncryptTransformer
 	GetCryptoParams() CryptoParams
 }
