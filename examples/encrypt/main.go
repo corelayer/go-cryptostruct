@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/corelayer/go-cryptostruct/examples/data"
 	"github.com/corelayer/go-cryptostruct/pkg/cryptostruct"
 )
@@ -41,6 +43,12 @@ func main() {
 			FirstName: "First",
 			LastName:  "Last",
 		},
+		SliceDetails: []data.EmbeddedData{
+			{
+				FirstName: "SliceFirst",
+				LastName:  "SliceLast",
+			},
+		},
 	}
 	fmt.Println(id)
 
@@ -58,6 +66,13 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(sd, reflect.TypeOf(sd))
+	fmt.Println("")
+	var dump []byte
+	dump, err = yaml.Marshal(&sd)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s", dump)
 	fmt.Println("_________________")
 
 	// time.Sleep(2 * time.Second)

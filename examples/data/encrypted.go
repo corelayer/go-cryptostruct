@@ -48,14 +48,11 @@ func (d SecureEmbeddedData) GetCryptoParams() cryptostruct.CryptoParams {
 	return d.CryptoParams
 }
 
-func (d SecureEmbeddedData) SetEncryptParams(p cryptostruct.CryptoParams) {
-	d.CryptoParams = p
-}
-
 type SecureData struct {
 	Name         string                    `json:"name" yaml:"name" mapstructure:"name" secure:"true"`
 	Count        string                    `json:"count" yaml:"count" mapstructure:"count" secure:"true"`
 	Details      SecureEmbeddedData        `json:"details" yaml:"details" mapstructure:"details" secure:"true"`
+	SliceDetails []SecureEmbeddedData      `json:"sliceDetails" yaml:"sliceDetails" mapstructure:"sliceDetails" secure:"true"`
 	CryptoParams cryptostruct.CryptoParams `json:"cryptoParams" yaml:"cryptoParams" mapstructure:"cryptoParams"`
 }
 
@@ -68,8 +65,4 @@ func (d SecureData) GetTransformConfig() cryptostruct.TransformConfig {
 
 func (d SecureData) GetCryptoParams() cryptostruct.CryptoParams {
 	return d.CryptoParams
-}
-
-func (d SecureData) SetEncryptParams(p cryptostruct.CryptoParams) {
-	d.CryptoParams = p
 }

@@ -81,11 +81,32 @@ func (t Encrypter) Transform(r any) (any, error) {
 			continue
 		}
 
-		var encryptedValue reflect.Value
-		if encryptedValue, err = t.encryptField(fieldType, fieldValue); err != nil {
-			return nil, err
+		// fmt.Println("input:", inputValue.Field(i).Type(), inputValue.Field(i).Kind())
+		// fmt.Println("output:", tmp.FieldByName(fieldName).Type(), tmp.FieldByName(fieldName).Kind())
+		switch inputValue.Field(i).Kind() {
+		case reflect.Slice:
+			newSlice := reflect.MakeSlice(tmp.FieldByName(fieldName).Type(), 0, 10)
+			fmt.Println("newslice", newSlice.Type())
+			for si := 0; si < inputValue.Field(i).Len(); si++ {
+				fmt.Println("slice index:", si)
+				var encryptedValue reflect.Value
+				if encryptedValue, err = t.encryptField(reflect.TypeOf(inputValue.Field(i).Index(si).Interface()), inputValue.Field(i).Index(si)); err != nil {
+					return nil, err
+				}
+				fmt.Println("slice encrypted:", encryptedValue, encryptedValue.Type())
+				// encryptedSliceValue[si] = encryptedValue
+				newSlice = reflect.Append(newSlice, encryptedValue)
+
+			}
+			tmp.FieldByName(fieldName).Set(newSlice)
+		default:
+			var encryptedValue reflect.Value
+			if encryptedValue, err = t.encryptField(fieldType, fieldValue); err != nil {
+				return nil, err
+			}
+			tmp.FieldByName(fieldName).Set(encryptedValue)
+
 		}
-		tmp.FieldByName(fieldName).Set(encryptedValue)
 	}
 
 	outputValue.Set(tmp)
@@ -98,6 +119,7 @@ func (t Encrypter) encryptField(fieldType reflect.Type, fieldValue reflect.Value
 		cryptoConfig sio.Config
 		out          reflect.Value
 	)
+	fmt.Println("encrypt field", fieldType, fieldValue)
 	// Generate sio.Config from CryptoParams
 	cryptoConfig, err = t.params.GetCryptoConfig(t.key)
 	if err != nil {
