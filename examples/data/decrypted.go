@@ -16,7 +16,9 @@
 
 package data
 
-import "github.com/corelayer/go-cryptostruct/pkg/cryptostruct"
+import (
+	"github.com/corelayer/go-cryptostruct/pkg/cryptostruct"
+)
 
 type SecondEmbeddedData struct {
 	Age int `json:"age" yaml:"age" mapstructure:"age" secure:"false"`
@@ -47,6 +49,7 @@ type InsecureData struct {
 	Count        int            `json:"count" yaml:"count" mapstructure:"count" secure:"true"`
 	Details      EmbeddedData   `json:"details" yaml:"details" mapstructure:"details" secure:"true"`
 	SliceDetails []EmbeddedData `json:"sliceDetails" yaml:"sliceDetails" mapstructure:"sliceDetails" secure:"true"`
+	NumberSlice  []int          `json:"numberSlice" yaml:"numberSlice" mapstructure:"numberSlice" secure:"true"`
 }
 
 func (d InsecureData) GetTransformConfig() cryptostruct.TransformConfig {

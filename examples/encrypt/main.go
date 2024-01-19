@@ -45,10 +45,15 @@ func main() {
 		},
 		SliceDetails: []data.EmbeddedData{
 			{
-				FirstName: "SliceFirst",
-				LastName:  "SliceLast",
+				FirstName: "Slice1-First",
+				LastName:  "Slice1-Last",
+			},
+			{
+				FirstName: "Slice2-First",
+				LastName:  "Slice2-Last",
 			},
 		},
+		NumberSlice: []int{1, 2, 3, 4, 5},
 	}
 	fmt.Println(id)
 

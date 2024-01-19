@@ -53,6 +53,7 @@ type SecureData struct {
 	Count        string                    `json:"count" yaml:"count" mapstructure:"count" secure:"true"`
 	Details      SecureEmbeddedData        `json:"details" yaml:"details" mapstructure:"details" secure:"true"`
 	SliceDetails []SecureEmbeddedData      `json:"sliceDetails" yaml:"sliceDetails" mapstructure:"sliceDetails" secure:"true"`
+	NumberSlice  []string                  `json:"numberSlice" yaml:"numberSlice" mapstructure:"numberSlice" secure:"true"`
 	CryptoParams cryptostruct.CryptoParams `json:"cryptoParams" yaml:"cryptoParams" mapstructure:"cryptoParams"`
 }
 

@@ -81,39 +81,46 @@ func (t Encrypter) Transform(r any) (any, error) {
 			continue
 		}
 
-		// fmt.Println("input:", inputValue.Field(i).Type(), inputValue.Field(i).Kind())
-		// fmt.Println("output:", tmp.FieldByName(fieldName).Type(), tmp.FieldByName(fieldName).Kind())
+		var encryptedValue reflect.Value
 		switch inputValue.Field(i).Kind() {
 		case reflect.Slice:
-			newSlice := reflect.MakeSlice(tmp.FieldByName(fieldName).Type(), 0, 10)
-			fmt.Println("newslice", newSlice.Type())
-			for si := 0; si < inputValue.Field(i).Len(); si++ {
-				fmt.Println("slice index:", si)
-				var encryptedValue reflect.Value
-				if encryptedValue, err = t.encryptField(reflect.TypeOf(inputValue.Field(i).Index(si).Interface()), inputValue.Field(i).Index(si)); err != nil {
-					return nil, err
-				}
-				fmt.Println("slice encrypted:", encryptedValue, encryptedValue.Type())
-				// encryptedSliceValue[si] = encryptedValue
-				newSlice = reflect.Append(newSlice, encryptedValue)
-
-			}
-			tmp.FieldByName(fieldName).Set(newSlice)
-		default:
-			var encryptedValue reflect.Value
-			if encryptedValue, err = t.encryptField(fieldType, fieldValue); err != nil {
+			if encryptedValue, err = t.encryptSlice(fieldValue, tmp.FieldByName(fieldName).Type()); err != nil {
 				return nil, err
 			}
-			tmp.FieldByName(fieldName).Set(encryptedValue)
-
+		default:
+			if encryptedValue, err = t.encryptFields(fieldType, fieldValue); err != nil {
+				return nil, err
+			}
 		}
+		tmp.FieldByName(fieldName).Set(encryptedValue)
 	}
 
 	outputValue.Set(tmp)
 	return output, nil
 }
 
-func (t Encrypter) encryptField(fieldType reflect.Type, fieldValue reflect.Value) (reflect.Value, error) {
+func (t Encrypter) encryptSlice(inputValue reflect.Value, outputType reflect.Type) (reflect.Value, error) {
+	var (
+		err    error
+		output reflect.Value
+	)
+
+	// Create a slice of the outputType with the correct capacity
+	output = reflect.MakeSlice(outputType, 0, 0)
+
+	// Loop over the input slice and encrypt each element
+	for i := 0; i < inputValue.Len(); i++ {
+		var encryptedValue reflect.Value
+		if encryptedValue, err = t.encryptFields(reflect.TypeOf(inputValue.Index(i).Interface()), inputValue.Index(i)); err != nil {
+			return reflect.Value{}, err
+		}
+		// Append the encrypted value to the output
+		output = reflect.Append(output, encryptedValue)
+	}
+	return output, nil
+}
+
+func (t Encrypter) encryptFields(fieldType reflect.Type, fieldValue reflect.Value) (reflect.Value, error) {
 	var (
 		err          error
 		cryptoConfig sio.Config
@@ -129,7 +136,7 @@ func (t Encrypter) encryptField(fieldType reflect.Type, fieldValue reflect.Value
 	// Check if the current field is a struct, which implements the interface EncryptTransformer
 	// Decide to encrypt the field or the embedded struct
 	if fieldType.Implements(reflect.TypeOf((*EncryptTransformer)(nil)).Elem()) {
-		if out, err = t.encryptEmbeddedStruct(fieldValue, t.params.CipherSuite); err != nil {
+		if out, err = t.encryptStruct(fieldValue, t.params.CipherSuite); err != nil {
 			return reflect.Value{}, err
 		}
 	} else {
@@ -145,7 +152,7 @@ func (t Encrypter) encryptField(fieldType reflect.Type, fieldValue reflect.Value
 	return out, nil
 }
 
-func (t Encrypter) encryptEmbeddedStruct(field reflect.Value, cipherSuite string) (reflect.Value, error) {
+func (t Encrypter) encryptStruct(field reflect.Value, cipherSuite string) (reflect.Value, error) {
 	var (
 		err          error
 		encrypter    Encrypter
