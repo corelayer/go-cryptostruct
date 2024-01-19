@@ -111,6 +111,7 @@ func (t Encrypter) encryptField(fieldType reflect.Type, fieldValue reflect.Value
 			return reflect.Value{}, err
 		}
 	} else {
+		fmt.Println(fieldValue.Kind(), fieldType)
 		source := []byte(fieldValue.String())
 		outBuf := make([]byte, 0)
 		encryptedData := bytes.NewBuffer(outBuf)

@@ -18,9 +18,22 @@ package data
 
 import "github.com/corelayer/go-cryptostruct/pkg/cryptostruct"
 
+type SecureSecondEmbeddedData struct {
+	Age          int                       `json:"age" yaml:"age" mapstructure:"age" secure:"false"`
+	CryptoParams cryptostruct.CryptoParams `json:"cryptoParams" yaml:"cryptoParams" mapstructure:"cryptoParams"`
+}
+
+func (d SecureSecondEmbeddedData) GetTransformConfig() cryptostruct.TransformConfig {
+	return cryptostruct.TransformConfig{
+		Decrypted: SecondEmbeddedData{},
+		Encrypted: SecureSecondEmbeddedData{},
+	}
+}
+
 type SecureEmbeddedData struct {
 	FirstName    string                    `json:"firstName" yaml:"firstName" mapstructure:"firstName" secure:"true"`
 	LastName     string                    `json:"lastName" yaml:"lastName" mapstructure:"lastName" secure:"true"`
+	Details      SecondEmbeddedData        `json:"details" yaml:"details" mapstructure:"details" secure:"false"`
 	CryptoParams cryptostruct.CryptoParams `json:"cryptoParams" yaml:"cryptoParams" mapstructure:"cryptoParams"`
 }
 
