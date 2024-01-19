@@ -99,5 +99,11 @@ func main() {
 		panic(err2)
 	}
 	fmt.Println(newid, reflect.TypeOf(newid))
+	fmt.Println("")
+	dump, err = yaml.Marshal(&newid)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s", dump)
 	fmt.Println("_________________")
 }

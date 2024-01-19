@@ -96,8 +96,15 @@ func (t Decrypter) Transform(r DecryptTransformer) (any, error) {
 
 		// Decrypt current field
 		var decryptedValue reflect.Value
-		if decryptedValue, err = t.decryptField(fieldType, fieldValue, tmp.FieldByName(fieldName).Kind(), cryptoConfig); err != nil {
-			return nil, err
+		switch inputValue.Field(i).Kind() {
+		case reflect.Slice:
+			if decryptedValue, err = t.decryptSlice(fieldValue, tmp.FieldByName(fieldName).Type(), cryptoConfig); err != nil {
+				return nil, err
+			}
+		default:
+			if decryptedValue, err = t.decryptFields(fieldType, fieldValue, tmp.FieldByName(fieldName).Kind(), cryptoConfig); err != nil {
+				return nil, err
+			}
 		}
 		tmp.FieldByName(fieldName).Set(decryptedValue)
 	}
@@ -106,13 +113,35 @@ func (t Decrypter) Transform(r DecryptTransformer) (any, error) {
 	return output, nil
 }
 
-func (t Decrypter) decryptField(fieldType reflect.Type, fieldValue reflect.Value, outputType reflect.Kind, cryptoConfig sio.Config) (reflect.Value, error) {
+func (t Decrypter) decryptSlice(inputValue reflect.Value, outputType reflect.Type, cryptoConfig sio.Config) (reflect.Value, error) {
+	var (
+		err    error
+		output reflect.Value
+	)
+	fmt.Println("outputType", outputType)
+
+	// Create a slice of the outputType with the correct capacity
+	output = reflect.MakeSlice(outputType, 0, 0)
+
+	// Loop over the input slice and encrypt each element
+	for i := 0; i < inputValue.Len(); i++ {
+		var decryptedValue reflect.Value
+		if decryptedValue, err = t.decryptFields(reflect.TypeOf(inputValue.Index(i).Interface()), inputValue.Index(i), outputType.Elem().Kind(), cryptoConfig); err != nil {
+			return reflect.Value{}, err
+		}
+		// Append the decrypted value to the output
+		output = reflect.Append(output, decryptedValue)
+	}
+	return output, nil
+}
+
+func (t Decrypter) decryptFields(fieldType reflect.Type, fieldValue reflect.Value, outputType reflect.Kind, cryptoConfig sio.Config) (reflect.Value, error) {
 	var (
 		err error
 		out reflect.Value
 	)
 	if fieldType.Implements(reflect.TypeOf((*DecryptTransformer)(nil)).Elem()) {
-		if out, err = t.decryptEmbeddedStruct(fieldValue); err != nil {
+		if out, err = t.decryptStruct(fieldValue); err != nil {
 			return reflect.Value{}, err
 		}
 	} else {
@@ -134,7 +163,7 @@ func (t Decrypter) decryptField(fieldType reflect.Type, fieldValue reflect.Value
 	return t.convertValue(out, outputType), nil
 }
 
-func (t Decrypter) decryptEmbeddedStruct(field reflect.Value) (reflect.Value, error) {
+func (t Decrypter) decryptStruct(field reflect.Value) (reflect.Value, error) {
 	var (
 		err       error
 		decrypter Decrypter
