@@ -47,10 +47,16 @@ func main() {
 			{
 				FirstName: "Slice1-First",
 				LastName:  "Slice1-Last",
+				Details: data.SecondEmbeddedData{
+					Age: 10,
+				},
 			},
 			{
 				FirstName: "Slice2-First",
 				LastName:  "Slice2-Last",
+				Details: data.SecondEmbeddedData{
+					Age: 120,
+				},
 			},
 		},
 		NumberSlice: []int{1, 2, 3, 4, 5},

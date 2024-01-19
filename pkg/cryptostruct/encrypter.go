@@ -126,7 +126,6 @@ func (t Encrypter) encryptFields(fieldType reflect.Type, fieldValue reflect.Valu
 		cryptoConfig sio.Config
 		out          reflect.Value
 	)
-	fmt.Println("encrypt field", fieldType, fieldValue)
 	// Generate sio.Config from CryptoParams
 	cryptoConfig, err = t.params.GetCryptoConfig(t.key)
 	if err != nil {
@@ -140,7 +139,6 @@ func (t Encrypter) encryptFields(fieldType reflect.Type, fieldValue reflect.Valu
 			return reflect.Value{}, err
 		}
 	} else {
-		fmt.Println(fieldValue.Kind(), fieldType)
 		source := []byte(fieldValue.String())
 		outBuf := make([]byte, 0)
 		encryptedData := bytes.NewBuffer(outBuf)
