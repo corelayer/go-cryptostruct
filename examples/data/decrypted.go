@@ -46,6 +46,7 @@ func (d EmbeddedData) GetTransformConfig() cryptostruct.TransformConfig {
 
 type InsecureData struct {
 	Name         string         `json:"name" yaml:"name" mapstructure:"name" secure:"true"`
+	Title        string         `json:"title" yaml:"title" mapstructure:"title" secure:"true"`
 	Count        int            `json:"count" yaml:"count" mapstructure:"count" secure:"true"`
 	Details      EmbeddedData   `json:"details" yaml:"details" mapstructure:"details" secure:"true"`
 	SliceDetails []EmbeddedData `json:"sliceDetails" yaml:"sliceDetails" mapstructure:"sliceDetails" secure:"true"`

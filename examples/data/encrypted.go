@@ -50,6 +50,7 @@ func (d SecureEmbeddedData) GetCryptoParams() cryptostruct.CryptoParams {
 
 type SecureData struct {
 	Name         string                    `json:"name" yaml:"name" mapstructure:"name" secure:"true"`
+	Title        string                    `json:"title" yaml:"title" mapstructure:"title" secure:"true"`
 	Count        string                    `json:"count" yaml:"count" mapstructure:"count" secure:"true"`
 	Details      SecureEmbeddedData        `json:"details" yaml:"details" mapstructure:"details" secure:"true"`
 	SliceDetails []SecureEmbeddedData      `json:"sliceDetails" yaml:"sliceDetails" mapstructure:"sliceDetails" secure:"true"`
