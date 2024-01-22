@@ -139,13 +139,22 @@ func (t Encrypter) encryptFields(fieldType reflect.Type, fieldValue reflect.Valu
 			return reflect.Value{}, err
 		}
 	} else {
-		source := []byte(fieldValue.String())
-		outBuf := make([]byte, 0)
-		encryptedData := bytes.NewBuffer(outBuf)
-		if _, err = sio.Encrypt(encryptedData, bytes.NewReader(source), cryptoConfig); err != nil {
+		// Convert fieldValue to hex encoded string
+		var source string
+		source, err = convertValueToHexString(fieldValue)
+		if err != nil {
+			return reflect.Value{}, err
+		}
+		sourceDataReader := bytes.NewBuffer([]byte(source))
+		encryptedDataWriter := bytes.NewBuffer(make([]byte, 0))
+
+		// Encrypt data from sourceDataReader into EncryptedDataWrite using cryptoConfig
+		if _, err = sio.Encrypt(encryptedDataWriter, sourceDataReader, cryptoConfig); err != nil {
 			return reflect.Value{}, fmt.Errorf("failed to encrypt data: %w", err)
 		}
-		out = reflect.ValueOf(hex.EncodeToString(encryptedData.Bytes()))
+
+		// Encode the encrypted bytes to a hex encoded string
+		out = reflect.ValueOf(hex.EncodeToString(encryptedDataWriter.Bytes()))
 	}
 	return out, nil
 }

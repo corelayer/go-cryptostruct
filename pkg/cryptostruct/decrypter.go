@@ -21,7 +21,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"reflect"
-	"strconv"
 
 	"github.com/minio/sio"
 )
@@ -118,8 +117,6 @@ func (t Decrypter) decryptSlice(inputValue reflect.Value, outputType reflect.Typ
 		err    error
 		output reflect.Value
 	)
-	fmt.Println("outputType", outputType)
-
 	// Create a slice of the outputType with the correct capacity
 	output = reflect.MakeSlice(outputType, 0, 0)
 
@@ -135,32 +132,40 @@ func (t Decrypter) decryptSlice(inputValue reflect.Value, outputType reflect.Typ
 	return output, nil
 }
 
-func (t Decrypter) decryptFields(fieldType reflect.Type, fieldValue reflect.Value, outputType reflect.Kind, cryptoConfig sio.Config) (reflect.Value, error) {
+func (t Decrypter) decryptFields(fieldType reflect.Type, fieldValue reflect.Value, outputKind reflect.Kind, cryptoConfig sio.Config) (reflect.Value, error) {
 	var (
 		err error
 		out reflect.Value
 	)
+
+	// Check if the fieldType implements interface DecryptTransformer
 	if fieldType.Implements(reflect.TypeOf((*DecryptTransformer)(nil)).Elem()) {
 		if out, err = t.decryptStruct(fieldValue); err != nil {
 			return reflect.Value{}, err
 		}
 	} else {
+		// Decode fieldValue from hex encoded string to []byte
 		var source []byte
 		source, err = hex.DecodeString(fieldValue.String())
 		if err != nil {
 			return reflect.Value{}, err
 		}
-		outBuf := make([]byte, 0)
-		decryptedData := bytes.NewBuffer(outBuf)
-		if _, err = sio.Decrypt(decryptedData, bytes.NewReader(source), cryptoConfig); err != nil {
+
+		encryptedDataReader := bytes.NewReader(source)
+		decryptedDataWriter := bytes.NewBuffer(make([]byte, 0))
+
+		// Decrypt data in encryptedDataReader into decryptedDataWriter using cryptoconfig
+		if _, err = sio.Decrypt(decryptedDataWriter, encryptedDataReader, cryptoConfig); err != nil {
 			return reflect.Value{}, fmt.Errorf("failed to decrypt data: %w", err)
 		}
 
-		out = reflect.ValueOf(decryptedData.String())
-
+		// Convert decrypted data from hex string to desired output type
+		out, err = convertHexStringToValue(decryptedDataWriter.String(), outputKind)
+		if err != nil {
+			return reflect.Value{}, err
+		}
 	}
-
-	return t.convertValue(out, outputType), nil
+	return out, nil
 }
 
 func (t Decrypter) decryptStruct(field reflect.Value) (reflect.Value, error) {
@@ -177,22 +182,3 @@ func (t Decrypter) decryptStruct(field reflect.Value) (reflect.Value, error) {
 	}
 	return reflect.ValueOf(output), nil
 }
-
-func (t Decrypter) convertValue(decryptedData reflect.Value, kind reflect.Kind) reflect.Value {
-	switch kind {
-	case reflect.Int:
-		byteToInt, _ := strconv.Atoi(decryptedData.String())
-		return reflect.ValueOf(byteToInt)
-	case reflect.String:
-		return reflect.ValueOf(decryptedData.String())
-	case reflect.Struct:
-		return decryptedData
-	default:
-		return reflect.ValueOf(decryptedData)
-	}
-}
-
-//
-// func getCryptoParams(fieldValue reflect.Value) CryptoParams {
-// 	return fieldValue.FieldByName("CryptoParams").Interface().(CryptoParams)
-// }

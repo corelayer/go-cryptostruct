@@ -16,10 +16,54 @@
 
 package cryptostruct
 
-import "reflect"
+import (
+	"bytes"
+	"encoding/binary"
+	"encoding/hex"
+	"reflect"
+)
 
 func getEmbeddedTransformConfig(field reflect.Value) TransformConfig {
 	fnConfig := field.MethodByName("GetTransformConfig")
 	fnOutput := fnConfig.Call([]reflect.Value{})
 	return fnOutput[0].Interface().(TransformConfig)
+}
+
+func convertValueToHexString(v reflect.Value) (string, error) {
+	var (
+		err error
+	)
+	switch v.Kind() {
+	case reflect.Int:
+		buf := make([]byte, 0)
+		bufWriter := bytes.NewBuffer(buf)
+		err = binary.Write(bufWriter, binary.BigEndian, v.Int())
+		if err != nil {
+			return "", err
+		}
+		return hex.EncodeToString(bufWriter.Bytes()), nil
+	default:
+		return hex.EncodeToString([]byte(v.String())), nil
+	}
+}
+
+func convertHexStringToValue(input string, outputKind reflect.Kind) (reflect.Value, error) {
+	var (
+		err     error
+		decoded []byte
+	)
+	// Decode hex encoded string to []byte
+	decoded, err = hex.DecodeString(input)
+	if err != nil {
+		return reflect.Value{}, err
+	}
+
+	// Create reflect.Value based on the output reflect.Kind
+	switch outputKind {
+	case reflect.Int:
+		decodedInt := binary.BigEndian.Uint64(decoded)
+		return reflect.ValueOf(int(decodedInt)), nil
+	default:
+		return reflect.ValueOf(string(decoded)), nil
+	}
 }
