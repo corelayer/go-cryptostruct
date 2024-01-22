@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"gopkg.in/yaml.v3"
-
 	"github.com/corelayer/go-cryptostruct/examples/data"
 	"github.com/corelayer/go-cryptostruct/pkg/cryptostruct"
 )
@@ -38,7 +36,8 @@ func main() {
 
 	id := data.InsecureData{
 		Name:  "insecuredata",
-		Count: 100,
+		Title: "insecuretitle",
+		Count: 130586,
 		Details: data.EmbeddedData{
 			FirstName: "First",
 			LastName:  "Last",
@@ -77,13 +76,13 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(sd, reflect.TypeOf(sd))
-	fmt.Println("")
-	var dump []byte
-	dump, err = yaml.Marshal(&sd)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("%s", dump)
+	// fmt.Println("")
+	// var dump []byte
+	// dump, err = yaml.Marshal(&sd)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Printf("%s", dump)
 	fmt.Println("_________________")
 
 	// time.Sleep(2 * time.Second)
@@ -92,18 +91,18 @@ func main() {
 	fmt.Println("_________________")
 
 	decryptdata := sd.(data.SecureData)
-	fmt.Println(decryptdata, reflect.TypeOf(decryptdata))
+	// fmt.Println(decryptdata, reflect.TypeOf(decryptdata))
 	decrypter := cryptostruct.NewDecrypter(masterKey, decryptdata.GetTransformConfig())
 	newid, err2 := decrypter.Transform(decryptdata)
 	if err2 != nil {
 		panic(err2)
 	}
 	fmt.Println(newid, reflect.TypeOf(newid))
-	fmt.Println("")
-	dump, err = yaml.Marshal(&newid)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("%s", dump)
+	// fmt.Println("")
+	// dump, err = yaml.Marshal(&newid)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Printf("%s", dump)
 	fmt.Println("_________________")
 }
