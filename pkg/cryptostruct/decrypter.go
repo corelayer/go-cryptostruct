@@ -25,17 +25,19 @@ import (
 	"github.com/minio/sio"
 )
 
+func Decrypt(key string, data DecryptTransformer) (any, error) {
+	return NewDecrypter(hex.EncodeToString([]byte(key)), data.GetTransformConfig()).Transform(data)
+}
+
 func NewDecrypter(masterKeyHex string, c TransformConfig) Decrypter {
 	return Decrypter{
-		key: masterKeyHex,
-		// params: p,
+		key:    masterKeyHex,
 		config: c,
 	}
 }
 
 type Decrypter struct {
-	key string
-	// params CryptoParams
+	key    string
 	config TransformConfig
 }
 
@@ -52,7 +54,6 @@ func (t Decrypter) Transform(r DecryptTransformer) (any, error) {
 	inputValue := reflect.ValueOf(r)
 
 	// // Get CryptoParams from input
-	// cryptoParams = r.GetCryptoParams()
 	cryptoConfig, err = r.GetCryptoParams().GetCryptoConfig(t.key)
 	if err != nil {
 		return nil, fmt.Errorf("could not initialize crypto parameters: %w", err)
@@ -66,9 +67,6 @@ func (t Decrypter) Transform(r DecryptTransformer) (any, error) {
 
 	// Get struct to which data must be converted
 	output = t.config.Decrypted
-	//
-	// outputType := reflect.TypeOf(output)
-	// fmt.Println("outputType", outputType)
 
 	// To be able to set the fields for the output, we need to get the Value of the output pointer
 	outputValue := reflect.ValueOf(&output).Elem()

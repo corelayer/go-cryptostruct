@@ -25,6 +25,10 @@ import (
 	"github.com/minio/sio"
 )
 
+func Encrypt(key string, cryptoParams CryptoParams, data EncryptTransformer) (any, error) {
+	return NewEncrypter(hex.EncodeToString([]byte(key)), cryptoParams, data.GetTransformConfig()).Transform(data)
+}
+
 func NewEncrypter(masterKeyHex string, p CryptoParams, c TransformConfig) Encrypter {
 	return Encrypter{
 		key:    masterKeyHex,

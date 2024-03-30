@@ -27,7 +27,6 @@ type Tag struct {
 func getTags(r any) (map[string]Tag, error) {
 	var err error
 
-	// r := *new(i)
 	t := reflect.TypeOf(r)
 
 	// Create a map with capacity of the number of fields in T
